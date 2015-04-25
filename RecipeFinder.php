@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php
 
 /**
@@ -348,13 +349,15 @@ class FridgeManager {
     	
     	// Make sure file exists.
     	if (!is_readable($csvPath)) {
-    		throw new FileException('Cannot open '.$csvPath.'. The file does not exist of you do not have permissions to access it.');
+    		throw new Exception('Cannot open '.$csvPath.'. The file does not exist of you do not have permissions to access it.');
     	}
     	
     	// Open file.
     	if (!$handle = fopen($csvPath, 'r')) {
-    		throw new FileException('Could not open file '.$csvPath.'.');
+    		throw new Exception('Could not open file '.$csvPath.'.');
     	}
+    	
+    	$line = 0;
     	
     	try {
 
@@ -362,13 +365,14 @@ class FridgeManager {
 	    	while($row = fgetcsv($handle)) {
 	    		
 	    		// Instantiate FridgeIngredient class.
+	    		$line++;
 	    		$fridgeIngredient = new FridgeIngredient($row[0], $row[1], $row[2], $row[3]);
 	    		$fridge->addItem($fridgeIngredient);
 	    	}
     	} catch (Exception $e) {
     		
     		fclose($handle);
-    		throw $e;
+    		throw new Exception('CSV file import error on line '.$line.': '.$e->getMessage());
     	}
     }
     
@@ -579,12 +583,12 @@ class RecipeManager {
     	
 	    // Make sure file exists.
 	    if (!is_readable($jsonFilePath)) {
-	    	throw new FileException('Cannot open '.$jsonFilePath.'. The file does not exist of you do not have permissions to access it.');
+	    	throw new Exception('Cannot open '.$jsonFilePath.'. The file does not exist of you do not have permissions to access it.');
 	    }
 	    
 	    // Open file.
 	    if (!$handle = fopen($jsonFilePath, 'r')) {
-	    	throw new FileException('Could not open file '.$jsonFilePath.'.');
+	    	throw new Exception('Could not open file '.$jsonFilePath.'.');
 	    }
 	    
 	    try {
@@ -596,25 +600,45 @@ class RecipeManager {
 	    } catch (Exception $e) {
 	    	
 	    	fclose($handle);
-	    	throw $e;
+	    	throw new Exception('JSON file import error: '.$e->getMessage());
 	    }
     	
     }
 }
 
-$recipeCollection = new RecipeCollection();
-RecipeManager::fillRecipeCollectionFromJSONFile($recipeCollection, 'RecipeCollection.csv');
-
-$fridge = new Fridge();
-FridgeManager::fillFridgeFromCSVFile($fridge, 'FridgeContents.csv');
-print_r($fridge->findRecipe($recipeCollection));
-
-
-//$fridge->findRecipe($recipeCollection);
-//print_r($fridge);
-/*foreach ($recipeCollection as $recipe) {
-	print_r($recipe);
-}*/
+// Check command line input.
+if ($argv[1] == 'run') {
+	
+	// Make sure JSON file was provided.
+	if (!isset($argv[2])) {
+		echo 'Error: missing recipe JSON data file.';
+	}
+	
+	// Make sure CSV file was provided.
+	if (!isset($argv[3])) {
+		echo 'Error: missing fridge content CSV data file.';
+	}
+	
+	try {
+		
+		// Import json file into recipe collection.
+		$recipeCollection = new RecipeCollection();
+		RecipeManager::fillRecipeCollectionFromJSONFile($recipeCollection, $argv[2]);
+		
+		// Import fringe content into Fridge structure. 
+		$fridge = new Fridge();
+		FridgeManager::fillFridgeFromCSVFile($fridge, $argv[3]);
+		if ($recipe = $fridge->findRecipe($recipeCollection)) {
+			echo $recipe->getName()."\n";
+		} else {
+			echo 'Order Takeout'."\n";
+		}
+	} catch (Exception $e) {
+		
+		// Got an error.
+		echo 'Error: '.$e->getMessage()."\n";
+	}
+}
 
 
 
