@@ -30,7 +30,7 @@ abstract class Enum {
 }
 
 /**
- * @name UnitsOfMeasure abstract class
+ * @name UnitsOfMeasure class
  * @author Alex Agafonov
  * @desc Enum for units of measure
  */
@@ -64,24 +64,23 @@ class Ingredient {
     /**
      * The unit of measure, values of (for individual items eggs, bananas etc) grams, ml (milliliters), slices.
      *
-     * @var enum
+     * @var UnitsOfMeasure
      */
     private $unitOfMeasure;
     
     /**
      * Use by date.
      *
-     * @var date
+     * @var DateTime
      */
     private $useByDate;
     
     /**
-     * Transforms associative array into key value array using index names.
+     * Constructor.
      *
      * @param $itemName string  item name
      * @param $amount   int     the amount
-     * @param $unitOfMeasure    enum    the unit of measure
-     * @param $useByDate    date    use by date
+     * @param $unitOfMeasure    string    the unit of measure
      * @return void
      */
     public function __construct($itemName, $amount, $unitOfMeasure) {
@@ -146,7 +145,7 @@ class Ingredient {
     /**
      * Sets units of measure.
      *
-     * @param $unitOfMeasure    enum    the unit of measure
+     * @param $unitOfMeasure    string    the unit of measure
      * @return void
      */
     public function setUnitOfMeasure($unitOfMeasure) {
@@ -185,11 +184,11 @@ class FridgeIngredient extends Ingredient {
     private $useByDate;
     
     /**
-     * Transforms associative array into key value array using index names.
+     * Constructor.
      *
      * @param $itemName string  item name
      * @param $amount   int     the amount
-     * @param $unitOfMeasure    enum    the unit of measure
+     * @param $unitOfMeasure    string    the unit of measure
      * @param $useByDate    date    use by date
      * @return void
      */
@@ -202,23 +201,29 @@ class FridgeIngredient extends Ingredient {
     /**
      * Sets use by date.
      *
-     * @param $useByDate    date    use by date
+     * @param $useByDate    string    use by date
      * @return void
      */
     public function setUseByDate($useByDate) {
         
         // Parse date and make sure it is valid.
         try {
-            $this->useByDate = DateTime::createFromFormat('d/m/Y', $useByDate)->setTime(0, 0);
+            $this->useByDate = DateTime::createFromFormat('d/m/Y', $useByDate);
         } catch (Exception $e) {
-            throw new InvalidArgumentException('Units of measure '.$unitOfMeasure.' is not supported.');
+            throw new InvalidArgumentException('Use by date format is not supported.');
         }
+        
+        if (!$this->useByDate) {
+        	throw new InvalidArgumentException('Use by date format is not supported.');
+        }
+        
+        $this->useByDate->setTime(0, 0);
     }
     
     /**
      * Gets use by date.
      *
-     * @return date
+     * @return DateTime
      */
     public function getUseByDate() {
         
@@ -226,7 +231,7 @@ class FridgeIngredient extends Ingredient {
     }
     
 	/**
-     * Has expired.
+     * Return true if fridge ingredient has expired.
      *
      * @return bool
      */
@@ -261,13 +266,15 @@ class Fridge {
      * @return void
      */
     public function addItem($item) {
+    	
+    	// Create hash map to be able to quickly lookup item in the fridge.
         $this->items[$item->getItemName()] = $item;
     }
     
     /**
-     * Check if there is a certain ingredient in the fridge and it is not expired.
+     * Returns true if the ingredient is present in the fridge, has the right quantity and has not expired.
      *
-     * @param $ingredient Ingredient ingredient in the fridge
+     * @param $ingredient Ingredient ingredient
      * @return void
      */
     public function hasUnexpiredItem($item) {
@@ -287,6 +294,14 @@ class Fridge {
         return false;
     }
     
+    /**
+     * Accepts collection of recipes as a parameter and returns a recipe that has all unexpired ingredients
+     * present in the fridge with the righ quantities. If multiple recipes found returns the ones with ingredients
+     * closest to expiry date.
+     *
+     * @param $recipeCollection RecipeCollection collection of recipes
+     * @return Recipe
+     */
     public function findRecipe($recipeCollection) {
     	
     	$currentRecipe = false;
@@ -343,8 +358,20 @@ class Fridge {
     
 }
 
+/**
+ * @name FridgeManager helper class
+ * @author Alex Agafonov
+ * @desc Contains fridge helper functions.
+ */
 class FridgeManager {
     
+	/**
+     * Accepts fridge object and csv file path and imports fridge contents from it.
+     *
+     * @param $fridge Fridge fridge object
+     * @param $csvPath string csv file path
+     * @return void
+     */
     public static function fillFridgeFromCSVFile(&$fridge, $csvPath) {
     	
     	// Make sure file exists.
@@ -381,7 +408,7 @@ class FridgeManager {
 /**
  * @name Recipe class
  * @author Alex Agafonov
- * @desc Contains information about the recipe.
+ * @desc Contains information about a recipe.
  */
 class Recipe {
     
@@ -399,6 +426,13 @@ class Recipe {
      */
     private $ingredients;
     
+    /**
+     * Constructor.
+     *
+     * @param $name string name of a recipe
+     * @param $ingredients array array of Ingredient objects
+     * @return void
+     */
     public function __construct($name, $ingredients = array()) {
         
         $this->setName($name);
@@ -444,7 +478,7 @@ class Recipe {
     public function addIngredient($item) {
         
         // Validate recipe name.
-        if (get_class($item) != 'Ingredient') {
+        if (!is_object($item) || (is_object($item) && get_class($item) != 'Ingredient')) {
             throw new InvalidArgumentException('Passed item is not a valid Ingredient object.');
         }
         
@@ -461,14 +495,14 @@ class Recipe {
 }
 
 /**
- * @name Recipe class
+ * @name RecipeCollection class
  * @author Alex Agafonov
- * @desc Contains information about the recipe.
+ * @desc Contains collection of recipe objects.
  */
 class RecipeCollection implements Iterator {
     
     /**
-     * List of ingredients.
+     * List of recipes.
      *
      * @var array
      */
@@ -480,13 +514,13 @@ class RecipeCollection implements Iterator {
     /**
      * Adds recipe to collection.
      *
-     * @param $item Recipe  ingredient
+     * @param $recipe Recipe  recipe
      * @return void
      */
     public function addRecipe($recipe) {
         
         // Validate recipe name.
-        if (get_class($recipe) != 'Recipe') {
+        if (!is_object($recipe) || (is_object($recipe) && get_class($recipe) != 'Recipe')) {
             throw new InvalidArgumentException('Passed item is not a valid Recipe object.');
         }
         
@@ -548,8 +582,20 @@ class RecipeCollection implements Iterator {
   	}
 }
 
+/**
+ * @name RecipeManager helper class
+ * @author Alex Agafonov
+ * @desc Contains recipe helper functions.
+ */
 class RecipeManager {
-    	
+    
+	/**
+     * Import recipes from json string into RecipeCollection.
+     *
+     * @param $recipeCollection RecipeCollection reference to collection of recipes
+     * @param $jsonData string recipes in JSON format
+     * @return void
+     */
     public static function fillRecipeCollectionFromJSONString(&$recipeCollection, $jsonData) {
         
     	// Decode json data.
@@ -579,6 +625,13 @@ class RecipeManager {
     	}
     }
     
+    /**
+     * Import recipes from json file into RecipeCollection.
+     *
+     * @param $recipeCollection RecipeCollection reference to collection of recipes
+     * @param $jsonFilePath string path to JSON file
+     * @return void
+     */
 	public static function fillRecipeCollectionFromJSONFile(&$recipeCollection, $jsonFilePath) {
     	
 	    // Make sure file exists.
@@ -638,6 +691,80 @@ if ($argv[1] == 'run') {
 		// Got an error.
 		echo 'Error: '.$e->getMessage()."\n";
 	}
+
+// Unit testing.
+} else if ($argv[1] == 'test') {
+	
+	require_once('RecipeFinderTest.php');
+	
+	assert_options(ASSERT_ACTIVE, 1);
+	assert_options(ASSERT_WARNING, 0);
+	assert_options(ASSERT_QUIET_EVAL, 1);
+	
+	// Define test classes and methods.
+	$tests = array(
+		'IngredientTest' => array(
+			'testItemNameCannotBeEmpty',
+			'testAmountMustBeInteger',
+			'testUnitsOfMeasureMustBeValidEnumValue'
+		),
+		
+		'FridgeIngredientTest' => array(
+			'testUseByDateCannotAcceptInvalidDateFormat',
+			'testUseByDateMustHaveValidDateFormat',
+			'testUseByDateExpired1',
+			'testUseByDateExpired2'
+		),
+		
+		'FridgeTest' => array(
+			'testHasUnexpiredItem1',
+			'testHasUnexpiredItem2',
+			'testHasUnexpiredItem3',
+			'testFindValidRecipe1',
+			'testFindValidRecipe2',
+			'testFindValidRecipe3',
+			'testFindValidRecipe4',
+			'testFindValidRecipe5'
+		),
+		
+		'RecipeTest' => array(
+			'testRecipeNameCannotBeEmpty',
+			'testIngredientMustBeOfTypeIngredient'
+		),
+		
+		'RecipeCollectionTest' => array(
+			'testRecipeMustBeOfTypeRecipe'
+		)
+	);
+	
+	// Run tests.
+	$testCompleted = 0;
+	$passed = 0;
+	
+	echo "\n\n".'Running unit tests:'."\n";
+	
+	// Go through all test classes.
+	foreach ($tests as $testClass => $testMethods) {
+		
+		// Instantiate test class.
+		$testObject = new $testClass();
+		
+		// Test each method.
+		foreach ($testMethods as $testMethod) {
+			$testCompleted++;
+			echo $testClass.'::'.$testMethod;
+			
+			// Get assert results.
+			if ($testObject->$testMethod()) {
+				$passed++;
+				echo "\x1b[32;01m OK \x1b[39;49;00m\n";
+			} else {
+				echo "\x1b[31;01m FAILED \x1b[39;49;00m\n";
+			}
+		}
+	}
+	
+	echo "\n".'Tests completed: '.$testCompleted.' Passed: '.$passed."\n\n";
 }
 
 
