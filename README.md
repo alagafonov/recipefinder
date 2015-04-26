@@ -1,8 +1,8 @@
 ## Notes
 
-1. Normally classes would be separated into individual files however to avoid using autoloader and adding complexity to the task all classes were placed into a single file.
+1. Normally classes would be separated into individual files however to avoid using autoloader and adding complexity to the task all classes were placed into one file.
 
-2. To avoid adding extra dependency unit testing has been done using PHP's assert finction instead of using a framework (e.g. PHPUnit).
+2. To avoid adding extra dependencies unit testing was done using PHP's assert function instead of a framework (e.g. PHPUnit).
 
 ## Deployment
 
