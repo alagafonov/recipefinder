@@ -7,6 +7,11 @@
  */
 class IngredientTest {
 
+	/**
+     * Test - item name cannot be empty.
+     *
+     * @return bool
+     */
 	public function testItemNameCannotBeEmpty() {
 		
 		$errorMessage = '';
@@ -18,6 +23,11 @@ class IngredientTest {
 		return assert('$errorMessage == \'Item name cannot be empty.\'');
 	}
 	
+	/**
+     * Test - amount must be an integer value.
+     *
+     * @return bool
+     */
 	public function testAmountMustBeInteger() {
 		
 		$errorMessage = '';
@@ -29,6 +39,11 @@ class IngredientTest {
 		return assert('$errorMessage == \'Item amount must be an integer value.\'');
 	}
 	
+	/**
+     * Test - units of measure must be a valid index in enum.
+     *
+     * @return bool
+     */
 	public function testUnitsOfMeasureMustBeValidEnumValue() {
 		
 		$errorMessage = '';
@@ -42,12 +57,18 @@ class IngredientTest {
 }
 
 /**
- * @name IngredientTest class
+ * @name FridgeIngredientTest class
  * @author Alex Agafonov
- * @desc Unit testing for Ingredient class 
+ * @desc Unit testing for FridgeIngredient class 
  */
 class FridgeIngredientTest {
 
+	/**
+     * Test - use by date must be in dd/mm/yyyy format.
+     * This scenario checks what happens when invalid date format is passed.
+     *
+     * @return bool
+     */
 	public function testUseByDateCannotAcceptInvalidDateFormat() {
 		
 		$errorMessage = '';
@@ -59,6 +80,12 @@ class FridgeIngredientTest {
 		return assert('$errorMessage == \'Use by date format is not supported.\'');
 	}
 	
+	/**
+     * Test - use by date must be in dd/mm/yyyy format.
+     * This scenario checks what happens when valid date format is passed.
+     *
+     * @return bool
+     */
 	public function testUseByDateMustHaveValidDateFormat() {
 		
 		$ingredient = new FridgeIngredient('test', 10, 'grams', '21/10/2014');
@@ -66,12 +93,22 @@ class FridgeIngredientTest {
 		return assert('$useByDate->format(\'Y-m-d\') == \'2014-10-21\'');
 	}
 	
+	/**
+     * Test - check if use by date is expired. Ingredient is expired in this scenario.
+     *
+     * @return bool
+     */
 	public function testUseByDateExpired1() {
 		
 		$ingredient = new FridgeIngredient('test', 10, 'grams', '21/10/2014');
 		return assert('$ingredient->hasExpired() == true');
 	}
 	
+	/**
+     * Test - check if use by date is expired. Ingredient is NOT expired in this scenario.
+     *
+     * @return bool
+     */
 	public function testUseByDateExpired2() {
 		
 		$ingredient = new FridgeIngredient('test', 10, 'grams', '21/10/2016');
@@ -80,12 +117,18 @@ class FridgeIngredientTest {
 }
 
 /**
- * @name IngredientTest class
+ * @name FridgeTest class
  * @author Alex Agafonov
- * @desc Unit testing for Ingredient class 
+ * @desc Unit testing for Fridge class 
  */
 class FridgeTest {
 	
+	/**
+     * Test - checks if fridge has unexpired item.
+     * In this scenario ingredient in the fridge is expired but quantities match.
+     *
+     * @return bool
+     */
 	public function testHasUnexpiredItem1() {
 		
 		$fridge = new Fridge();
@@ -95,6 +138,12 @@ class FridgeTest {
 		return assert('$fridge->hasUnexpiredItem($ingredient) == false');
 	}
 	
+	/**
+     * Test - checks if fridge has unexpired item.
+     * In this scenario ingredient in the fridge is NOT expired and quantities match.
+     *
+     * @return bool
+     */
 	public function testHasUnexpiredItem2() {
 		
 		$fridge = new Fridge();
@@ -104,6 +153,12 @@ class FridgeTest {
 		return assert('$fridge->hasUnexpiredItem($ingredient) == true');
 	}
 	
+	/**
+     * Test - checks if fridge has unexpired item.
+     * In this scenario ingredient in the fridge is NOT expired but quantity in the fridge is not sufficient.
+     *
+     * @return bool
+     */
 	public function testHasUnexpiredItem3() {
 		
 		$fridge = new Fridge();
@@ -113,6 +168,12 @@ class FridgeTest {
 		return assert('$fridge->hasUnexpiredItem($ingredient) == false');
 	}
 	
+	/**
+     * Test - find recipe from the collection of recipes that match ingredient condition.
+     * In this scenario recipe matches all the available ingredients.
+     *
+     * @return bool
+     */
 	public function testFindValidRecipe1() {
 		
 		// Create and fille the fridge.
@@ -135,6 +196,12 @@ class FridgeTest {
 		return assert('$foundRecipe->getName() == \'Test recipe\'');
 	}
 	
+	/**
+     * Test - find recipe from the collection of recipes that match ingredient condition.
+     * In this scenario one of the ingredients has higher quantity requirement.
+     *
+     * @return bool
+     */
 	public function testFindValidRecipe2() {
 		
 		// Create and fille the fridge.
@@ -156,6 +223,12 @@ class FridgeTest {
 		return assert('$fridge->findRecipe($recipeCollection) == false');
 	}
 	
+	/**
+     * Test - find recipe from the collection of recipes that match ingredient condition.
+     * In this scenario one of the ingredients has expired.
+     *
+     * @return bool
+     */
 	public function testFindValidRecipe3() {
 		
 		// Create and fille the fridge.
@@ -177,6 +250,12 @@ class FridgeTest {
 		return assert('$fridge->findRecipe($recipeCollection) == false');
 	}
 	
+	/**
+     * Test - find recipe from the collection of recipes that match ingredient condition.
+     * In this scenario there are two recipes one with ingredients closer to expiry date.
+     *
+     * @return bool
+     */
 	public function testFindValidRecipe4() {
 		
 		// Create and fille the fridge.
@@ -206,6 +285,12 @@ class FridgeTest {
 		return assert('$foundRecipe->getName() == \'Test recipe 2\'');
 	}
 	
+	/**
+     * Test - find recipe from the collection of recipes that match ingredient condition.
+     * In this scenario there are two recipes with all ingredients having the same expiry date.
+     *
+     * @return bool
+     */
 	public function testFindValidRecipe5() {
 		
 		// Create and fille the fridge.
@@ -237,12 +322,17 @@ class FridgeTest {
 }
 
 /**
- * @name IngredientTest class
+ * @name RecipeTest class
  * @author Alex Agafonov
- * @desc Unit testing for Ingredient class 
+ * @desc Unit testing for Recipe class 
  */
 class RecipeTest {
 
+	/**
+     * Test - recipe name cannot be empty.
+     *
+     * @return bool
+     */
 	public function testRecipeNameCannotBeEmpty() {
 		
 		$errorMessage = '';
@@ -254,6 +344,11 @@ class RecipeTest {
 		return assert('$errorMessage == \'Recipe name cannot be empty.\'');
 	}
 	
+	/**
+     * Test - input parameter must be of type Ingredient.
+     *
+     * @return bool
+     */
 	public function testIngredientMustBeOfTypeIngredient() {
 		
 		try {
@@ -267,12 +362,17 @@ class RecipeTest {
 }
 
 /**
- * @name IngredientTest class
+ * @name RecipeCollectionTest class
  * @author Alex Agafonov
- * @desc Unit testing for Ingredient class 
+ * @desc Unit testing for RecipeCollection class 
  */
 class RecipeCollectionTest {
 	
+	/**
+     * Test - input parameter must be of type Recipe.
+     *
+     * @return bool
+     */
 	public function testRecipeMustBeOfTypeRecipe() {
 		
 		try {
