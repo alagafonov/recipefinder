@@ -69,13 +69,6 @@ class Ingredient {
     private $unitOfMeasure;
     
     /**
-     * Use by date.
-     *
-     * @var DateTime
-     */
-    private $useByDate;
-    
-    /**
      * Constructor.
      *
      * @param $itemName string  item name
